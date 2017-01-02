@@ -35,13 +35,14 @@
 
 #define MAIN_DDR		DDRD
 #define MAIN_PORT		PORTD
+#define MAIN_INPUT		PIND
 #define DIT_PIN			2		// digital pin 2
 #define DAH_PIN			3		// digital pin 3
 #define OUT_PIN			4		// digital pin 4
 #define SIDETONE_PIN		5		// digital pin 5
 
-#define DIT_DOWN	((MAIN_PORT&_BV(DIT_PIN)) == 0)
-#define DAH_DOWN	((MAIN_PORT&_BV(DAH_PIN)) == 0)
+#define DIT_DOWN	((MAIN_INPUT&_BV(DIT_PIN)) == 0)
+#define DAH_DOWN	((MAIN_INPUT&_BV(DAH_PIN)) == 0)
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -53,6 +54,7 @@ void
 init()
 {
     MAIN_DDR  |= _BV(OUT_PIN) | _BV(SIDETONE_PIN) ;
+    MAIN_DDR  &= ~(_BV(DIT_PIN)|_BV(DAH_PIN)) ;
     MAIN_PORT |= _BV(DIT_PIN) | _BV(DAH_PIN) ;
     LED_DDR   |= _BV(LED_PIN) ;
 }
@@ -103,7 +105,7 @@ sidetone_init()
 
 ////////////////////////////////////////////////////////////////////////
 
-#define WPM	(12)
+#define WPM	(5)
 
 // With standard spacing, the length of a dit can be computed as 
 // 	1200 ms / words per minute
@@ -323,10 +325,11 @@ main(void)
 
 	    if (buffer_count > 0)
 		mode = MODE_ASCII ;
-	    else if (DIT_DOWN) 
+	    else if (DIT_DOWN) {
 		mode = MODE_DIT ;
-	    else if (DAH_DOWN)
+	    } else if (DAH_DOWN) {
 		mode = MODE_DAH ;
+	    }
 	    break ;
 
 	case MODE_DIT:					// send a dit
@@ -378,6 +381,8 @@ main(void)
 	case MODE_EWORD:				// end of word
 
 	    delay_ms(4*ditlen) ;
+	    uart_putchar(' ') ;
+ 	    mode = MODE_START ;
 	    break ;
 	
 	case MODE_ASCII:
